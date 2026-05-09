@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SCHEMA BPE — Planning Bonnafous Transports</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Barlow', Arial, sans-serif; background: #edeae2; color: #1a1916; font-size: 15px; line-height: 1.45; min-height: 100vh; }
+
+    /* HEADER */
+    .header { background:#1a1916; color:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 22px; height:62px; position:sticky; top:0; z-index:300; }
+    .logo-tag { background:#d97200; color:#fff; font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:12px; letter-spacing:.14em; padding:4px 10px; border-radius:3px; text-transform:uppercase; }
+    .h-title { font-family:'Barlow Condensed',sans-serif; font-size:21px; font-weight:700; letter-spacing:.06em; }
+    .h-sub { font-family:'IBM Plex Mono',monospace; font-size:11px; color:#888; margin-top:2px; }
+
+    /* STATS BAR */
+    .stats-bar { background:#fff; border-bottom:2px solid #ccc9bc; display:flex; align-items:center; padding:0 22px; height:58px; }
+    .st { display:flex; flex-direction:column; padding:0 18px; }
+    .st:first-child { padding-left:0; }
+    .st-sep { width:1px; height:32px; background:#ddd9ce; }
+    .sv { font-family:'IBM Plex Mono',monospace; font-size:23px; font-weight:500; color:#d97200; line-height:1; }
+    .sv.k { color:#1a1916; }
+    .sv.g { color:#1c7035; }
+    .sv.r { color:#bc2a1e; }
+    .sl { font-family:'Barlow Condensed',sans-serif; font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:#9a9888; margin-top:2px; }
+    .stats-date { margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#aaa; }
+
+    /* LAYOUT */
+    .layout { display:flex; height:calc(100vh - 120px); overflow:hidden; }
+
+    /* SIDEBAR */
+    .sidebar { width:340px; flex-shrink:0; background:#fff; border-right:2px solid #ccc9bc; display:flex; flex-direction:column; overflow:hidden; }
+    .sb-top { padding:13px 16px; border-bottom:1px solid #e0ddd4; display:flex; align-items:center; justify-content:space-between; }
+    .sb-title { font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#6b685e; }
+    .sb-count { font-family:'IBM Plex Mono',monospace; font-size:14px; color:#6b685e; background:#f0ede6; border:1px solid #ddd9ce; border-radius:3px; padding:1px 11px; }
+    .ftabs { display:flex; border-bottom:1px solid #e0ddd4; padding:7px 12px; gap:4px; }
+    .ftab { padding:6px 13px; border-radius:4px; font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:600; letter-spacing:.04em; cursor:pointer; border:none; background:transparent; color:#9a9888; }
+    .ftab.on { background:#fff7eb; color:#d97200; }
+    .ftab:hover:not(.on) { color:#1a1916; }
+    .sb-body { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:10px; }
+    ::-webkit-scrollbar { width:6px; }
+    ::-webkit-scrollbar-track { background:#f0ede6; }
+    ::-webkit-scrollbar-thumb { background:#ccc9bc; border-radius:3px; }
+
+    /* COMMAND CARD */
+    .cmd-card { background:#fff; border:1.5px solid #ccc9bc; border-left:5px solid #ccc9bc; border-radius:6px; overflow:hidden; }
+    .cmd-card.sf { border-left-color:#1c7035; }
+    .cmd-card.sp { border-left-color:#d97200; }
+    .cmd-card.se { border-left-color:#ccc9bc; }
+    .cmd-head { padding:12px 13px; cursor:pointer; user-select:none; }
+    .cmd-head:hover { background:#f7f5f0; }
+    .cmd-r1 { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:3px; }
+    .cmd-client { font-weight:600; font-size:15px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .cmd-heure { font-family:'IBM Plex Mono',monospace; font-size:15px; color:#d97200; font-weight:500; flex-shrink:0; }
+    .cmd-lieu { font-size:13px; color:#6b685e; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:8px; }
+    .cmd-r2 { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    .tag { display:inline-flex; align-items:center; font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; letter-spacing:.04em; padding:2px 9px; border-radius:3px; white-space:nowrap; }
+    .tag-m3 { background:#fff7eb; color:#d97200; border:1px solid #f0c86a; }
+    .tag-tours { background:#f0ede6; color:#6b685e; border:1px solid #ddd9ce; }
+    .tag-prog { font-family:'IBM Plex Mono',monospace; font-size:12px; }
+    .tag-prog.g { background:#eaf5ee; color:#1c7035; border:1px solid #80c895; }
+    .tag-prog.o { background:#fff7eb; color:#d97200; border:1px solid #f0c86a; }
+    .tag-prog.n { background:#f0ede6; color:#9a9888; border:1px solid #ddd9ce; }
+    .expand-icon { margin-left:auto; color:#9a9888; font-size:13px; flex-shrink:0; }
+
+    /* TOURS LIST EXPANDED */
+    .tours-wrap { border-top:1px solid #e0ddd4; background:#f7f5f0; padding:11px 13px; display:flex; flex-direction:column; gap:8px; }
+    .dur-hint { font-family:'IBM Plex Mono',monospace; font-size:11px; color:#6b685e; padding:6px 10px; background:#edeae2; border:1px solid #ddd9ce; border-radius:3px; line-height:1.5; }
+    .tour-row { display:grid; grid-template-columns:54px 50px 1fr; align-items:center; gap:8px; }
+    .t-lbl { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; letter-spacing:.04em; color:#6b685e; }
+    .t-m3 { font-family:'IBM Plex Mono',monospace; font-size:12px; color:#6b685e; text-align:right; }
+    .t-sel { background:#fff; border:1.5px solid #ccc9bc; border-radius:4px; color:#1a1916; font-family:'Barlow',sans-serif; font-size:13px; padding:6px 9px; outline:none; cursor:pointer; width:100%; min-width:0; }
+    .t-sel:focus { border-color:#d97200; }
+    .t-sel.s-full { border-color:#1c7035; background:#eaf5ee; color:#1c7035; font-weight:600; }
+    .t-sel.s-comp { border-color:#d97200; background:#fff7eb; color:#d97200; font-weight:600; }
+    .comp-note { font-size:12px; color:#d97200; font-style:italic; background:#fff7eb; border:1px solid #f0c86a; border-radius:3px; padding:4px 9px; line-height:1.45; }
+
+    /* MAIN GRID */
+    .main { flex:1; overflow:auto; padding:18px 22px; }
+    .cblock { margin-bottom:30px; }
+    .chdr { display:flex; align-items:center; gap:11px; margin-bottom:12px; padding-bottom:9px; border-bottom:2px solid #ccc9bc; }
+    .cname { font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:900; letter-spacing:.1em; text-transform:uppercase; }
+    .cbadge { font-family:'IBM Plex Mono',monospace; font-size:11px; padding:2px 9px; border-radius:3px; }
+    .cbadge.ok { background:#e8f0fb; color:#1554a0; border:1px solid #b0c8f0; }
+    .cbadge.nok { background:#fdf0ee; color:#bc2a1e; border:1px solid #e8b0aa; }
+    .cstats { margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#9a9888; }
+    .trucks-row { display:flex; flex-wrap:wrap; gap:12px; }
+
+    /* TRUCK CARD - TIMELINE */
+    .cam-card { width:230px; flex-shrink:0; background:#fff; border:1.5px solid #ccc9bc; border-radius:7px; overflow:hidden; display:flex; flex-direction:column; }
+    .cam-head { padding:10px 13px; background:#1a1916; display:flex; align-items:flex-start; justify-content:space-between; }
+    .cam-id { font-family:'IBM Plex Mono',monospace; font-size:11px; color:#d97200; }
+    .cam-driver { font-family:'Barlow Condensed',sans-serif; font-size:17px; font-weight:700; color:#fff; margin-top:2px; letter-spacing:.02em; }
+    .cam-cnt { font-family:'IBM Plex Mono',monospace; font-size:11px; padding:3px 8px; border-radius:3px; margin-top:2px; flex-shrink:0; }
+    .cam-cnt.busy { background:rgba(28,112,53,.5); color:#90e0aa; }
+    .cam-cnt.free { background:rgba(255,255,255,.1); color:#888; }
+    .cam-body { padding:0; min-height:80px; }
+
+    /* TIMELINE BLOCK */
+    .tl-empty { padding:28px 14px; text-align:center; color:#aaa; font-size:13px; font-style:italic; }
+    .tl-block { padding:11px 13px; border-bottom:1px dashed #e0ddd4; position:relative; }
+    .tl-block:last-child { border-bottom:none; }
+    .tl-block.plein { background:#f7fdf9; }
+    .tl-block.complement { background:#fffbf2; }
+    .tl-block.delayed { background:#fdf6f5; }
+    .tl-times { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+    .tl-start { font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:600; color:#1a1916; line-height:1; }
+    .tl-arrow { color:#aaa; font-size:14px; }
+    .tl-end { font-family:'IBM Plex Mono',monospace; font-size:13px; color:#9a9888; }
+    .tl-warn { margin-left:auto; font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:.04em; padding:2px 7px; border-radius:3px; background:#fdf0ee; color:#bc2a1e; border:1px solid #e8b0aa; text-transform:uppercase; }
+    .tl-client { font-size:14px; font-weight:600; color:#1a1916; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .tl-meta { display:flex; align-items:center; justify-content:space-between; margin-top:3px; }
+    .tl-info { font-size:12px; color:#6b685e; }
+    .tl-info.comp { color:#d97200; font-weight:600; font-style:italic; }
+    .tl-m3 { font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:500; }
+    .tl-m3.plein { color:#1c7035; }
+    .tl-m3.complement { color:#d97200; }
+    .tl-idle { padding:5px 13px; background:#f7f5f0; font-family:'IBM Plex Mono',monospace; font-size:11px; color:#9a9888; text-align:center; border-bottom:1px dashed #e0ddd4; font-style:italic; }
+
+    .no-trucks-msg { font-size:13px; color:#6b685e; font-style:italic; padding:12px 16px; background:#fdf0ee; border:1px dashed #e8b0aa; border-radius:5px; }
+
+    /* BUTTONS */
+    .btn { display:inline-flex; align-items:center; gap:7px; padding:9px 17px; border-radius:5px; font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; letter-spacing:.05em; cursor:pointer; border:none; transition:all .12s; white-space:nowrap; }
+    .btn-orange { background:#d97200; color:#fff; }
+    .btn-orange:hover { background:#b86000; }
+    .btn-outline { background:transparent; color:#6b685e; border:1.5px solid #ccc9bc; }
+    .btn-outline:hover { border-color:#d97200; color:#d97200; }
+    .btn-green { background:#1c7035; color:#fff; }
+    .btn-green:hover { background:#145526; }
+    .btn-sm { padding:5px 12px; font-size:13px; }
+
+    /* MODAL */
+    .overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(3px); }
+    .modal { background:#fff; border:1.5px solid #ccc9bc; border-radius:10px; width:540px; max-width:96vw; max-height:88vh; overflow-y:auto; box-shadow:0 8px 40px rgba(0,0,0,.18); animation:fadeUp .17s ease; }
+    .modal.lg { width:720px; }
+    .modal-hdr { padding:18px 22px; border-bottom:1.5px solid #e0ddd4; display:flex; align-items:flex-start; justify-content:space-between; }
+    .m-title { font-family:'Barlow Condensed',sans-serif; font-size:19px; font-weight:900; letter-spacing:.06em; text-transform:uppercase; }
+    .m-sub { font-family:'IBM Plex Mono',monospace; font-size:12px; color:#9a9888; margin-top:3px; }
+    .modal-body { padding:22px; }
+    .close-btn { background:none; border:none; cursor:pointer; font-size:18px; color:#9a9888; padding:2px; line-height:1; }
+    .close-btn:hover { color:#bc2a1e; }
+
+    /* FORM */
+    .fgrid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .fg { display:flex; flex-direction:column; gap:5px; }
+    .fg.full { grid-column:1/-1; }
+    .flbl { font-family:'Barlow Condensed',sans-serif; font-size:12px; text-transform:uppercase; letter-spacing:.1em; color:#9a9888; font-weight:700; }
+    .fin, .fsel { background:#f7f5f0; border:1.5px solid #ccc9bc; border-radius:5px; color:#1a1916; font-family:'IBM Plex Mono',monospace; font-size:14px; padding:10px 12px; outline:none; width:100%; }
+    .fin:focus, .fsel:focus { border-color:#d97200; }
+    .fhint { font-size:12px; color:#9a9888; font-style:italic; }
+    .form-footer { display:flex; justify-content:flex-end; gap:8px; margin-top:20px; padding-top:14px; border-top:1.5px solid #e0ddd4; }
+    .tpreview { margin-top:8px; background:#f7f5f0; border:1.5px solid #e0ddd4; border-radius:5px; padding:10px 12px; }
+    .tpttl { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#9a9888; margin-bottom:7px; }
+    .tp-row { display:flex; align-items:center; gap:10px; font-size:13px; color:#6b685e; margin-bottom:3px; }
+    .tp-num { font-family:'IBM Plex Mono',monospace; font-size:12px; color:#d97200; width:52px; }
+    .tp-comp { color:#d97200; font-style:italic; }
+
+    /* SMS MODAL */
+    .sms-section-ttl { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; letter-spacing:.1em; color:#6b685e; text-transform:uppercase; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid #e0ddd4; }
+    .sms-section-ttl:not(:first-child) { margin-top:22px; }
+    .sms-block { background:#f7f5f0; border:1.5px solid #e0ddd4; border-radius:6px; padding:13px 16px; margin-bottom:8px; }
+    .sms-block.empty { background:#fafafa; border-color:#ddd9ce; }
+    .sms-driver { font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:700; color:#d97200; }
+    .sms-block.empty .sms-driver { color:#6b685e; }
+    .sms-camid { color:#9a9888; font-weight:400; font-size:14px; }
+    .sms-meta { font-family:'IBM Plex Mono',monospace; font-size:11px; color:#9a9888; }
+    .sms-body { font-family:'IBM Plex Mono',monospace; font-size:13px; color:#1a1916; line-height:1.65; white-space:pre-wrap; border-top:1px solid #e0ddd4; margin-top:7px; padding-top:7px; }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+  const { useState, useMemo } = React;
+  const CAP = 7.5;
+
+  const CENTRALES = [
+    { id:'rodez',        nom:'Rodez',                     cams:[
+      {id:'R1',ch:'Bernard D.'},{id:'R2',ch:'Michel L.'},{id:'R3',ch:'Alain M.'},
+      {id:'R4',ch:'Pierre V.'},{id:'R5',ch:'Jacques B.'}]},
+    { id:'mende',        nom:'Mende',                     cams:[
+      {id:'M1',ch:'René P.'},{id:'M2',ch:'Paul T.'},{id:'M3',ch:'Henri C.'}]},
+    { id:'severac',      nom:"Séverac-d'Aveyron",         cams:[] },
+    { id:'millau',       nom:'Millau',                    cams:[
+      {id:'ML1',ch:'André F.'},{id:'ML2',ch:'Jean-Pierre R.'},{id:'ML3',ch:'Marcel G.'}]},
+    { id:'salles',       nom:'Salles-Curan',              cams:[] },
+    { id:'requista',     nom:'Réquista',                  cams:[{id:'REQ1',ch:'Gérard N.'}] },
+    { id:'villefranche', nom:'Villefranche-de-Rouergue',  cams:[{id:'VF1',ch:'Robert S.'}] },
+    { id:'staffrique',   nom:'Saint-Affrique',            cams:[{id:'SA1',ch:'Claude A.'}] },
+  ];
+
+  const _d = new Date(); _d.setDate(_d.getDate() + 1);
+  const dateLong = _d.toLocaleDateString('fr-FR', {weekday:'long',day:'numeric',month:'long'});
+  const dateFmt  = _d.toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',year:'numeric'});
+
+  const fmtH = h => h.replace(':', 'h');
+  const toMin = h => { const [a,b] = h.split(':').map(Number); return a*60+b; };
+  const fromMin = m => { const h = Math.floor(m/60)%24, mm = m%60; return String(h).padStart(2,'0')+':'+String(mm).padStart(2,'0'); };
+  const addMin = (h, min) => fromMin(toMin(h) + min);
+
+  function computeTours(m3) {
+    const full = Math.floor(m3 / CAP);
+    const rem  = Math.round((m3 % CAP) * 10) / 10;
+    const tours = [];
+    for (let i=0; i<full; i++) tours.push({num:i+1, m3:CAP, type:'plein', camId:null});
+    if (rem > 0.05) tours.push({num:full+1, m3:rem, type:'complement', camId:null});
+    return tours;
+  }
+  const cycleDur = cmd => (cmd.trajMin || 20) * 2 + (cmd.chantierMin || 45);
+
+  const getCamInfo = camId => {
+    for (const c of CENTRALES) {
+      const f = c.cams.find(x => x.id === camId);
+      if (f) return { ...f, centraleNom: c.nom, centraleId: c.id };
+    }
+    return null;
+  };
+  const prog = tours => ({ total: tours.length, done: tours.filter(t => t.camId).length });
+
+  // ── SCHEDULE COMPUTATION ──────────────────────────────────────────────
+  // For a given truck, compute its actual schedule sequentially.
+  // Returns array of { tour, cmd, requestedStart, actualStart, actualEnd, isConflict, idleBefore }
+  function computeSchedule(camId, cmds) {
+    const items = [];
+    cmds.forEach(cmd => {
+      cmd.tours.filter(t => t.camId === camId).forEach(t => items.push({ tour:t, cmd }));
+    });
+    // Sort by requested heure, then tour num
+    items.sort((a, b) => {
+      if (a.cmd.h !== b.cmd.h) return a.cmd.h.localeCompare(b.cmd.h);
+      return a.tour.num - b.tour.num;
+    });
+    let prevEnd = '00:00';
+    let prevCmdId = null;
+    return items.map(item => {
+      const requested = item.cmd.h;
+      const reqMin = toMin(requested);
+      const prevMin = toMin(prevEnd);
+      const actualMin = Math.max(reqMin, prevMin);
+      const actualStart = fromMin(actualMin);
+      const actualEnd = fromMin(actualMin + cycleDur(item.cmd));
+      const delayMin = actualMin - reqMin;
+      // CONFLICT: delayed because of a tour from a DIFFERENT command
+      const isConflict = delayMin > 0 && prevCmdId !== item.cmd.id;
+      const idleBefore = prevCmdId ? actualMin - prevMin : 0;
+      prevEnd = actualEnd;
+      prevCmdId = item.cmd.id;
+      return { tour:item.tour, cmd:item.cmd, requestedStart:requested, actualStart, actualEnd, delayMin, isConflict, idleBefore };
+    });
+  }
+
+  let nextId = 9;
+
+  // ── INITIAL DATA ─────────────────────────────────────────────────────
+  const INIT = [
+    { id:1, client:'EIFFAGE TP',          lieu:'ZA de Calcomier, Rodez',        m3:36,  h:'07:00', cid:'rodez',        trajMin:15, chantierMin:60,
+      tours:[{num:1,m3:7.5,type:'plein',camId:'R1'},{num:2,m3:7.5,type:'plein',camId:'R2'},
+             {num:3,m3:7.5,type:'plein',camId:'R3'},{num:4,m3:7.5,type:'plein',camId:'R1'},
+             {num:5,m3:6.0,type:'complement',camId:'R4'}] },
+    { id:2, client:'QUILLE BTP',           lieu:'Route de Creissels, Millau',    m3:18,  h:'10:00', cid:'millau',       trajMin:20, chantierMin:45,
+      tours:[{num:1,m3:7.5,type:'plein',camId:'ML2'},{num:2,m3:7.5,type:'plein',camId:null},
+             {num:3,m3:3.0,type:'complement',camId:null}] },
+    { id:3, client:'BOUYGUES CONSTR.',     lieu:'Chantier A75 Sud, Millau',      m3:7.5, h:'06:30', cid:'millau',       trajMin:18, chantierMin:30,
+      tours:[{num:1,m3:7.5,type:'plein',camId:'ML1'}] },
+    { id:4, client:'SOCOTEC INFRA',        lieu:'Pont de la Diège, Mende',       m3:24,  h:'08:00', cid:'mende',        trajMin:30, chantierMin:60,
+      tours:[{num:1,m3:7.5,type:'plein',camId:'M1'},{num:2,m3:7.5,type:'plein',camId:'M2'},
+             {num:3,m3:7.5,type:'plein',camId:null},{num:4,m3:1.5,type:'complement',camId:null}] },
+    { id:5, client:'COLAS MIDI',           lieu:'Déviation D999, Réquista',      m3:8,   h:'07:30', cid:'requista',     trajMin:12, chantierMin:30,
+      tours:[{num:1,m3:7.5,type:'plein',camId:'REQ1'},{num:2,m3:0.5,type:'complement',camId:null}] },
+    { id:6, client:'RABION FRÈRES',        lieu:'Mas de la Borie, Villefranche', m3:7.5, h:'11:00', cid:'villefranche', trajMin:25, chantierMin:40,
+      tours:[{num:1,m3:7.5,type:'plein',camId:null}] },
+    { id:7, client:'COURÈGES BTP',         lieu:'Allée des Tilleuls, Onet',      m3:15,  h:'13:30', cid:'rodez',        trajMin:18, chantierMin:50,
+      tours:[{num:1,m3:7.5,type:'plein',camId:'R2'},{num:2,m3:7.5,type:'plein',camId:'R5'}] },
+  ];
+
+  // ── HEADER ───────────────────────────────────────────────────────────
+  function Header({ onAdd, onSMS }) {
+    return (
+      <header className="header">
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <span className="logo-tag">BPE</span>
+          <div>
+            <div className="h-title">SCHEMA — Planning Toupies</div>
+            <div className="h-sub">Bonnafous Transports · Point P Aveyron</div>
+          </div>
+        </div>
+        <div style={{display:'flex',gap:8}}>
+          <button className="btn btn-outline" onClick={onAdd}>＋ Commande</button>
+          <button className="btn btn-orange"  onClick={onSMS}>✉ Générer SMS</button>
+        </div>
+      </header>
+    );
+  }
+
+  // ── STATS BAR ────────────────────────────────────────────────────────
+  function StatsBar({ cmds }) {
+    const allTours = cmds.flatMap(c => c.tours);
+    const assigned = allTours.filter(t => t.camId).length;
+    const m3total  = cmds.reduce((s,c) => s + c.m3, 0);
+    const active   = new Set(allTours.filter(t => t.camId).map(t => t.camId)).size;
+    // Compte des conflits (tours en retard à cause d'une autre commande)
+    let conflicts = 0;
+    const allCams = CENTRALES.flatMap(c => c.cams.map(cam => cam.id));
+    allCams.forEach(camId => {
+      conflicts += computeSchedule(camId, cmds).filter(s => s.isConflict).length;
+    });
+    return (
+      <div className="stats-bar">
+        <div className="st"><span className="sv k">{cmds.length}</span><span className="sl">Commandes</span></div>
+        <div className="st-sep"/>
+        <div className="st"><span className="sv">{allTours.length}</span><span className="sl">Tours total</span></div>
+        <div className="st-sep"/>
+        <div className="st"><span className="sv g">{assigned}</span><span className="sl">Tours assignés</span></div>
+        <div className="st-sep"/>
+        <div className="st">
+          <span className="sv">{m3total}<span style={{fontSize:14,color:'#9a9888'}}>m³</span></span>
+          <span className="sl">Volume</span>
+        </div>
+        <div className="st-sep"/>
+        <div className="st"><span className="sv k">{active}</span><span className="sl">Toupies actives</span></div>
+        {conflicts > 0 && (
+          <>
+            <div className="st-sep"/>
+            <div className="st"><span className="sv r">{conflicts}</span><span className="sl">⚠ Conflits</span></div>
+          </>
+        )}
+        <div className="stats-date">Planning du {dateLong}</div>
+      </div>
+    );
+  }
+
+  // ── COMMAND CARD (sidebar) ──────────────────────────────────────────
+  function CmdCard({ cmd, onAssignTour }) {
+    const [open, setOpen] = useState(false);
+    const centrale = CENTRALES.find(c => c.id === cmd.cid);
+    const cams = centrale ? centrale.cams : [];
+    const { total, done } = prog(cmd.tours);
+    const nFull = cmd.tours.filter(t => t.type === 'plein').length;
+    const hasComp = cmd.tours.some(t => t.type === 'complement');
+    const dur = cycleDur(cmd);
+    const sc = done === total ? 'sf' : done > 0 ? 'sp' : 'se';
+    const pc = done === total ? 'g'  : done > 0 ? 'o'  : 'n';
+    return (
+      <div className={"cmd-card " + sc}>
+        <div className="cmd-head" onClick={() => setOpen(o => !o)}>
+          <div className="cmd-r1">
+            <span className="cmd-client">{cmd.client}</span>
+            <span className="cmd-heure">{fmtH(cmd.h)}</span>
+          </div>
+          <div className="cmd-lieu">{cmd.lieu}</div>
+          <div className="cmd-r2">
+            <span className="tag tag-m3">{cmd.m3}m³</span>
+            <span className="tag tag-tours">{nFull}T{hasComp ? '+C' : ''}</span>
+            <span className={"tag tag-prog " + pc}>{done}/{total}</span>
+            <span className="expand-icon">{open ? '▲' : '▼'}</span>
+          </div>
+        </div>
+        {open && (
+          <div className="tours-wrap">
+            <div className="dur-hint">
+              ⏱ Durée par tour : ~{dur} min<br/>
+              ({cmd.trajMin}min A/R × 2 + {cmd.chantierMin}min chantier)
+            </div>
+            {cmd.tours.map(tour => {
+              const isComp = tour.type === 'complement';
+              const selCls = tour.camId ? (isComp ? 's-comp' : 's-full') : '';
+              return (
+                <div key={tour.num} style={{display:'flex',flexDirection:'column',gap:4}}>
+                  <div className="tour-row">
+                    <span className="t-lbl">{isComp ? 'Compl.' : 'Tour ' + tour.num}</span>
+                    <span className="t-m3">{tour.m3}m³</span>
+                    <select className={"t-sel " + selCls} value={tour.camId || ''}
+                            onChange={e => onAssignTour(cmd.id, tour.num, e.target.value || null)}>
+                      <option value="">— Choisir un camion</option>
+                      {cams.map(c => <option key={c.id} value={c.id}>{c.id} — {c.ch}</option>)}
+                    </select>
+                  </div>
+                  {isComp && (
+                    <div className="comp-note">⏳ Complément ~{tour.m3}m³ — attente coup de fil maçon avant envoi</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── SIDEBAR ─────────────────────────────────────────────────────────
+  function Sidebar({ cmds, onAssignTour }) {
+    const [tab, setTab] = useState('all');
+    const list = tab === 'part' ? cmds.filter(c => { const p = prog(c.tours); return p.done > 0 && p.done < p.total; }) :
+                 tab === 'done' ? cmds.filter(c => { const p = prog(c.tours); return p.done === p.total; }) : cmds;
+    return (
+      <aside className="sidebar">
+        <div className="sb-top">
+          <span className="sb-title">Commandes</span>
+          <span className="sb-count">{cmds.length}</span>
+        </div>
+        <div className="ftabs">
+          {[['all','Toutes'],['part','Incomplètes'],['done','Complètes']].map(([k,l]) => (
+            <button key={k} className={"ftab " + (tab===k?'on':'')} onClick={() => setTab(k)}>{l}</button>
+          ))}
+        </div>
+        <div className="sb-body">
+          {[...list].sort((a,b) => a.h.localeCompare(b.h)).map(cmd => (
+            <CmdCard key={cmd.id} cmd={cmd} onAssignTour={onAssignTour} />
+          ))}
+        </div>
+      </aside>
+    );
+  }
+
+  // ── TIMELINE BLOCK (truck card) ──────────────────────────────────────
+  function TimelineBlock({ entry }) {
+    const isComp = entry.tour.type === 'complement';
+    const blockCls = entry.isConflict ? 'delayed' : entry.tour.type;
+    return (
+      <div className={"tl-block " + blockCls}>
+        <div className="tl-times">
+          <span className="tl-start">{fmtH(entry.actualStart)}</span>
+          <span className="tl-arrow">→</span>
+          <span className="tl-end">{fmtH(entry.actualEnd)}</span>
+          {entry.isConflict && (
+            <span className="tl-warn">⚠ +{entry.delayMin}min</span>
+          )}
+        </div>
+        <div className="tl-client">{entry.cmd.client}</div>
+        <div className="tl-meta">
+          <span className={"tl-info" + (isComp ? ' comp' : '')}>
+            {isComp ? '⏳ Compl. attente maçon' : 'Tour ' + entry.tour.num}
+          </span>
+          <span className={"tl-m3 " + entry.tour.type}>{entry.tour.m3}m³</span>
+        </div>
+      </div>
+    );
+  }
+
+  // ── TRUCK CARD (planning grid) ───────────────────────────────────────
+  function TruckCard({ cam, schedule }) {
+    return (
+      <div className="cam-card">
+        <div className="cam-head">
+          <div>
+            <div className="cam-id">{cam.id}</div>
+            <div className="cam-driver">{cam.ch}</div>
+          </div>
+          <span className={"cam-cnt " + (schedule.length > 0 ? 'busy' : 'free')}>
+            {schedule.length > 0 ? schedule.length + ' tour' + (schedule.length > 1 ? 's' : '') : 'libre'}
+          </span>
+        </div>
+        <div className="cam-body">
+          {schedule.length === 0 ? (
+            <div className="tl-empty">Disponible toute la journée</div>
+          ) : schedule.map((entry, i) => (
+            <React.Fragment key={i}>
+              {entry.idleBefore > 0 && i > 0 && (
+                <div className="tl-idle">⏸ {entry.idleBefore} min libre</div>
+              )}
+              <TimelineBlock entry={entry} />
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── PLANNING GRID ────────────────────────────────────────────────────
+  function PlanningGrid({ cmds }) {
+    return (
+      <main className="main">
+        {CENTRALES.map(centrale => {
+          const myCmds = cmds.filter(c => c.cid === centrale.id);
+          if (myCmds.length === 0) return null;
+          const totalT = myCmds.flatMap(c => c.tours).length;
+          const totalM = myCmds.reduce((s,c) => s + c.m3, 0);
+          return (
+            <div className="cblock" key={centrale.id}>
+              <div className="chdr">
+                <span className="cname">{centrale.nom}</span>
+                {centrale.cams.length > 0
+                  ? <span className="cbadge ok">{centrale.cams.length} toupie{centrale.cams.length > 1 ? 's' : ''}</span>
+                  : <span className="cbadge nok">sans toupie attitrée</span>}
+                <span className="cstats">{myCmds.length} cmd · {totalT} tours · {totalM}m³</span>
+              </div>
+              {centrale.cams.length === 0 ? (
+                <div className="no-trucks-msg">Centrale sans toupie attitrée — transfert vers autre centrale ou TP Puechoultres.</div>
+              ) : (
+                <div className="trucks-row">
+                  {centrale.cams.map(cam => {
+                    const schedule = computeSchedule(cam.id, cmds);
+                    return <TruckCard key={cam.id} cam={cam} schedule={schedule} />;
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </main>
+    );
+  }
+
+  // ── ADD MODAL ────────────────────────────────────────────────────────
+  function AddModal({ onClose, onAdd }) {
+    const [f, setF] = useState({ client:'', lieu:'', m3:'', h:'07:00', cid:'rodez', trajMin:'20', chantierMin:'45' });
+    const upd = (k, v) => setF(x => ({ ...x, [k]: v }));
+    const m3n = parseFloat(f.m3) || 0;
+    const preview = m3n > 0 ? computeTours(m3n) : [];
+    const dur = (parseInt(f.trajMin) || 20) * 2 + (parseInt(f.chantierMin) || 45);
+    const nFull = preview.filter(t => t.type === 'plein').length;
+    const hasComp = preview.some(t => t.type === 'complement');
+    const submit = () => {
+      if (!f.client.trim() || !f.lieu.trim() || !m3n) return;
+      onAdd({ id: nextId++, client: f.client.toUpperCase(), lieu: f.lieu, m3: m3n, h: f.h, cid: f.cid,
+              trajMin: parseInt(f.trajMin) || 20, chantierMin: parseInt(f.chantierMin) || 45,
+              tours: computeTours(m3n) });
+      onClose();
+    };
+    return (
+      <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+        <div className="modal">
+          <div className="modal-hdr">
+            <div>
+              <div className="m-title">Nouvelle Commande</div>
+              <div className="m-sub">Saisie centraliste — Point P Aveyron</div>
+            </div>
+            <button className="close-btn" onClick={onClose}>✕</button>
+          </div>
+          <div className="modal-body">
+            <div className="fgrid">
+              <div className="fg full">
+                <label className="flbl">Client / Donneur d'ordre</label>
+                <input className="fin" placeholder="ex : EIFFAGE TP" value={f.client} onChange={e => upd('client', e.target.value)} />
+              </div>
+              <div className="fg full">
+                <label className="flbl">Lieu de livraison</label>
+                <input className="fin" placeholder="Adresse ou description du chantier" value={f.lieu} onChange={e => upd('lieu', e.target.value)} />
+              </div>
+              <div className="fg">
+                <label className="flbl">Volume commandé (m³)</label>
+                <input className="fin" type="number" placeholder="ex : 36" min="0.5" step="0.5" value={f.m3} onChange={e => upd('m3', e.target.value)} />
+                <span className="fhint">1 toupie = {CAP}m³</span>
+              </div>
+              <div className="fg">
+                <label className="flbl">Heure de chargement</label>
+                <input className="fin" type="time" value={f.h} onChange={e => upd('h', e.target.value)} />
+              </div>
+              <div className="fg">
+                <label className="flbl">Trajet aller (min)</label>
+                <input className="fin" type="number" min="5" max="120" value={f.trajMin} onChange={e => upd('trajMin', e.target.value)} />
+              </div>
+              <div className="fg">
+                <label className="flbl">Durée chantier (min, max 120)</label>
+                <input className="fin" type="number" min="10" max="120" value={f.chantierMin} onChange={e => upd('chantierMin', e.target.value)} />
+                <span className="fhint">Cycle estimé : ~{dur}min</span>
+              </div>
+              <div className="fg full">
+                <label className="flbl">Centrale</label>
+                <select className="fsel" value={f.cid} onChange={e => upd('cid', e.target.value)}>
+                  {CENTRALES.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.nom}{c.cams.length === 0 ? ' (sans toupie)' : ' — ' + c.cams.length + ' toupie' + (c.cams.length > 1 ? 's' : '')}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {preview.length > 0 && (
+              <div className="tpreview">
+                <div className="tpttl">Découpage auto — {preview.length} tour{preview.length > 1 ? 's' : ''} ({nFull} plein{nFull > 1 ? 's' : ''}{hasComp ? ' + 1 complément' : ''})</div>
+                {preview.map(t => (
+                  <div key={t.num} className="tp-row">
+                    <span className="tp-num">{t.type === 'complement' ? 'Compl.' : 'Tour ' + t.num}</span>
+                    <span>{t.m3}m³</span>
+                    {t.type === 'complement' && <span className="tp-comp">⏳ attente coup de fil maçon</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="form-footer">
+              <button className="btn btn-outline" onClick={onClose}>Annuler</button>
+              <button className="btn btn-orange"  onClick={submit}>Ajouter la commande</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── SMS MODAL ────────────────────────────────────────────────────────
+  // SMS par chauffeur : juste l'heure du PREMIER chargement de la journée.
+  // Si pas de travail : SMS "rien à faire".
+  function SMSModal({ cmds, onClose }) {
+    // 1. Pour chaque chauffeur (de toutes les centrales), trouver son premier tour assigné.
+    const allCams = CENTRALES.flatMap(c => c.cams.map(cam => ({...cam, centraleNom: c.nom, centraleId: c.id})));
+
+    const driverFirstTour = allCams.map(cam => {
+      const sched = computeSchedule(cam.id, cmds);
+      const first = sched[0]; // déjà trié par heure
+      return { cam, first };
+    });
+
+    const withWork = driverFirstTour.filter(d => d.first);
+    const withoutWork = driverFirstTour.filter(d => !d.first);
+
+    function smsWithWork(d) {
+      const prenom = d.cam.ch.split(' ')[0];
+      const centraleNom = d.first.cmd.cid === d.cam.centraleId
+        ? d.cam.centraleNom
+        : (CENTRALES.find(c => c.id === d.first.cmd.cid)?.nom || d.cam.centraleNom);
+      return 'Bonsoir ' + prenom + ',\n\n' +
+             'Pour demain ' + dateFmt + ' : Centrale ' + centraleNom + ' à ' + fmtH(d.first.actualStart) + '.\n\n' +
+             'Bonne soirée.';
+    }
+    function smsEmpty(d) {
+      const prenom = d.cam.ch.split(' ')[0];
+      return 'Bonjour ' + prenom + ',\n\n' +
+             "Pour demain il n'y a rien. Merci.\n\n" +
+             'Bonne soirée.';
+    }
+
+    const [copied, setCopied] = useState(null);
+    const copyAll = () => {
+      const all = [
+        ...withWork.map(d => '=== ' + d.cam.ch + ' (' + d.cam.id + ') ===\n' + smsWithWork(d)),
+        ...withoutWork.map(d => '=== ' + d.cam.ch + ' (' + d.cam.id + ') · REPOS ===\n' + smsEmpty(d)),
+      ].join('\n\n──────\n\n');
+      navigator.clipboard.writeText(all).then(() => { setCopied('all'); setTimeout(() => setCopied(null), 2200); });
+    };
+
+    return (
+      <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+        <div className="modal lg">
+          <div className="modal-hdr">
+            <div>
+              <div className="m-title">✉ SMS Chauffeurs — {dateLong}</div>
+              <div className="m-sub">{withWork.length} convocation{withWork.length !== 1 ? 's' : ''} · {withoutWork.length} repos</div>
+            </div>
+            <div style={{display:'flex',gap:8,alignItems:'center'}}>
+              {(withWork.length + withoutWork.length) > 0 && (
+                <button className="btn btn-green btn-sm" onClick={copyAll}>
+                  {copied === 'all' ? '✓ Copié !' : 'Tout copier'}
+                </button>
+              )}
+              <button className="close-btn" onClick={onClose}>✕</button>
+            </div>
+          </div>
+          <div className="modal-body">
+            {withWork.length > 0 && <div className="sms-section-ttl">Convocations · {withWork.length}</div>}
+            {withWork.map(d => (
+              <div className="sms-block" key={d.cam.id}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
+                  <span className="sms-driver">{d.cam.ch} <span className="sms-camid">· {d.cam.id}</span></span>
+                  <span className="sms-meta">→ {fmtH(d.first.actualStart)}</span>
+                </div>
+                <div className="sms-body">{smsWithWork(d)}</div>
+              </div>
+            ))}
+            {withoutWork.length > 0 && <div className="sms-section-ttl">Au repos · {withoutWork.length}</div>}
+            {withoutWork.map(d => (
+              <div className="sms-block empty" key={d.cam.id}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
+                  <span className="sms-driver">{d.cam.ch} <span className="sms-camid">· {d.cam.id}</span></span>
+                  <span className="sms-meta">— pas de travail —</span>
+                </div>
+                <div className="sms-body">{smsEmpty(d)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── APP ─────────────────────────────────────────────────────────────
+  function App() {
+    const [cmds, setCmds] = useState(INIT);
+    const [showAdd, setShowAdd] = useState(false);
+    const [showSMS, setShowSMS] = useState(false);
+    const assignTour = (cmdId, tourNum, camId) => {
+      setCmds(list => list.map(c =>
+        c.id !== cmdId ? c : { ...c, tours: c.tours.map(t => t.num === tourNum ? { ...t, camId: camId || null } : t) }
+      ));
+    };
+    return (
+      <>
+        <Header onAdd={() => setShowAdd(true)} onSMS={() => setShowSMS(true)} />
+        <StatsBar cmds={cmds} />
+        <div className="layout">
+          <Sidebar cmds={cmds} onAssignTour={assignTour} />
+          <PlanningGrid cmds={cmds} />
+        </div>
+        {showAdd && <AddModal onClose={() => setShowAdd(false)} onAdd={cmd => setCmds(l => [...l, cmd])} />}
+        {showSMS && <SMSModal cmds={cmds} onClose={() => setShowSMS(false)} />}
+      </>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
